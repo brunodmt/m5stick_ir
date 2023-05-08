@@ -11,6 +11,9 @@ const size_t kEepromSize = 8;
 // Address to store the IR code, const as we only need one value
 const int kIrCodeAddr = 0;
 
+// USB treshsold to trigger a code and turn off the device
+const float kUsbVTresh = 1;
+
 // Default delay to use in most cases
 const uint32_t kDelayMs = 100;
 // IR Receiver Pin
@@ -28,6 +31,9 @@ uint64_t ir_code;
 uint64_t temp_code;
 // Result struct to receive decoding from IRremote
 decode_results ir_results;
+
+// Current USB Voltage
+float usb_voltage;
 
 // Programming mode to register a new code
 void program_mode() {
@@ -110,6 +116,8 @@ void setup() {
   irrecv.enableIRIn();
   // Read the IR code from EEPROM
   ir_code = EEPROM.readULong64(kIrCodeAddr);
+  // Send a code when turning on, as this will be triggered by the TV turning on
+  irsend.sendNEC(ir_code);
 }
 
 void loop() {
@@ -122,6 +130,16 @@ void loop() {
   // If "B" was pressed, enter program mode
   } else if (M5.BtnB.wasReleased()) {
     program_mode();
+  }
+
+  // Get updated USB voltage
+  usb_voltage = M5.Axp.GetVBusVoltage();
+  // If it went below the treshold
+  if (usb_voltage < kUsbVTresh) {
+    // Send a code to turn the speakers off
+    irsend.sendNEC(ir_code);
+    // and turn off itself
+    M5.Axp.PowerOff();
   }
 
   delay(kDelayMs);
