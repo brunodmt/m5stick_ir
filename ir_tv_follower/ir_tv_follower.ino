@@ -19,7 +19,7 @@ const uint32_t kDelayMs = 100;
 // IR Receiver Pin
 const uint16_t kRecvPin = 33;
 // IR Emitter Pin
-const uint16_t kSendPin = 32;
+const uint16_t kSendPin = 9;
 
 // IRemote classes for sending and receiving
 IRrecv irrecv(kRecvPin);
