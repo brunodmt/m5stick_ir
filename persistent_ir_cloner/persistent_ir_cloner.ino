@@ -1,10 +1,15 @@
 
 #include <M5StickCPlus.h>
-
+#include <EEPROM.h>
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
 #include <IRsend.h>
 #include <IRutils.h>
+
+// EEPROM size (we only need 8 bytes)
+const size_t kEepromSize = 8;
+// Address to store the IR code, const as we only need one value
+const int kIrCodeAddr = 0;
 
 // Default delay to use in most cases
 const uint32_t kDelayMs = 100;
@@ -66,6 +71,10 @@ void program_mode() {
     if (M5.BtnA.wasReleased()) {
       // Save the code
       ir_code = temp_code;
+      // Write code to EEPROM
+      EEPROM.writeULong64(kIrCodeAddr, ir_code);
+      // And commit the changes
+      EEPROM.commit();
       // Confirm on screen
       M5.Lcd.fillScreen(BLACK);
       M5.Lcd.setTextDatum(MC_DATUM);
@@ -90,6 +99,8 @@ void program_mode() {
 void setup() {
   // Initialize with LCD and Power, but no Serial
   M5.begin(true, true, false);
+  // Open the EEPROM
+  EEPROM.begin(kEepromSize);
   // Turn off the screen (just the backlight...)
   M5.Axp.SetLDO2(false);
   // Initialize the IR sender
@@ -97,8 +108,8 @@ void setup() {
   // Enable IR receiver (it would be better to keep it enabled only during programming, but there
   // seems to be an issue managing the interruption so doing it here for now instead)
   irrecv.enableIRIn();
-  // Go to program mode, as we need a code to repeat
-  program_mode();
+  // Read the IR code from EEPROM
+  ir_code = EEPROM.readULong64(kIrCodeAddr);
 }
 
 void loop() {
